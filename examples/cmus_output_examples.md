@@ -1,0 +1,92 @@
+# PLAYING
+``` sh
+# cmus-remote -Q
+status playing
+file /music/wintersun/time_ii/01 Fields Of Snow.mp3
+duration 270
+position 2
+tag artist Wintersun
+tag album TIME II
+tag title Fields Of Snow
+tag date 2024
+tag tracknumber 1
+tag albumartist Wintersun
+set aaa_mode all
+set continue true
+set play_library true
+set play_sorted false
+set replaygain disabled
+set replaygain_limit true
+set replaygain_preamp 0.000000
+set repeat false
+set repeat_current false
+set shuffle albums
+set softvol false
+set vol_left 79
+set vol_right 79
+```
+
+# PAUSED
+``` sh
+# cmus-remote -Q
+status paused
+file /music/parius/the_signal_heard_through_space/Parius - The Signal Heard Throughout Space - 10 Arecibo.mp3
+duration 790
+position 1
+tag artist Parius
+tag album The Signal Heard Throughout Space
+tag title Arecibo
+tag date 2022-10-07
+tag originaldate 2022-10-07
+tag discnumber 1
+tag tracknumber 10
+tag albumartist Parius
+tag artistsort Parius
+tag albumartistsort Parius
+tag compilation 0
+tag label Willowtip
+tag publisher Willowtip
+tag comment Visit https://parius.bandcamp.com
+tag musicbrainz_trackid 55af04d0-fbd1-4a76-bdab-9ffbfb02046e
+tag media Digital Media
+tag bpm 0
+tag replaygain_track_gain -6.9 dB
+set aaa_mode all
+set continue true
+set play_library true
+set play_sorted false
+set replaygain disabled
+set replaygain_limit true
+set replaygain_preamp 0.000000
+set repeat false
+set repeat_current false
+set shuffle albums
+set softvol false
+set vol_left 79
+set vol_right 79
+```
+
+# STOPPED
+``` sh
+# cmus-remote -Q
+status stopped
+set aaa_mode all
+set continue true
+set play_library true
+set play_sorted false
+set replaygain disabled
+set replaygain_limit true
+set replaygain_preamp 0.000000
+set repeat false
+set repeat_current false
+set shuffle albums
+set softvol false
+set vol_left 0
+set vol_right 0
+```
+
+# NOT RUNNING
+``` sh
+# cmus-remote -Q
+cmus-remote: cmus is not running
+```
