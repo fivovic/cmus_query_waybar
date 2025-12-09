@@ -1,3 +1,6 @@
+.local*
+
 go.mod
 go.sum
+
 cmus_query_waybar

@@ -10,8 +10,8 @@ func main() {
 	parse_flags()
 	logger_options()
 	// cmus checks
-	cmus_output := cmus_query()
-	cmus_status := cmus_parse(cmus_output)
+	cmus_output := cmusQuery()
+	cmus_status := cmusParse(cmus_output)
 	// json output, ignoring error
 	b, _ := json.Marshal(cmus_status)
 	fmt.Println(string(b))
