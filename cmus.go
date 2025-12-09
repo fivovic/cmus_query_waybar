@@ -198,7 +198,7 @@ func _progressBar(percent float64, width int) (bar string) {
 
 func _progressPercent(position int, duration int) float64 {
 	// catch: avoid division by zero
-	if position <= 0 || duration < 0 {
+	if position <= 0 || duration <= 0 {
 		return 0
 	}
 	// calc: percentage
