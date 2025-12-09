@@ -7,19 +7,30 @@ import (
 	"strings"
 )
 
-type cmusWaybar struct {
-	Status  string `json:"status"`
-	Text    string `json:"text"`
-	Tooltip string `json:"tooltip"`
-}
-
+// first layer of processing that holds the most basic data
 type cmusMetadata struct {
+	status   string
 	artist   string
 	title    string
 	date     string
 	album    string
 	duration int
 	position int
+}
+
+// second layer that holds formatted text in pieces
+type cmusFormatted struct {
+	song    string
+	time    string
+	album   string
+	percent float64
+}
+
+// final layer that brings it all together for waybar
+type cmusWaybar struct {
+	Status  string `json:"status"`
+	Text    string `json:"text"`
+	Tooltip string `json:"tooltip"`
 }
 
 func cmusQuery() string {
@@ -45,69 +56,29 @@ func cmusQuery() string {
 }
 
 func cmusParse(cmus_output string) cmusWaybar {
-	// set defaults in case cmus is not running
-	status := "unknown"
-	text := ""
-	tooltip := ""
-	// check the status first
-	for line := range strings.SplitSeq(cmus_output, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "status ") {
-			fields := strings.Fields(line)
-			status = fields[1]
-			break
-		}
-	}
-	// handle each status, extracting the metadata
-	switch status {
-	case "playing":
-		symbol := 0x25B6 // ▶
-		song, time, album, percent := _cmusExtract(cmus_output)
-		if progress_bar {
-			bar := _progressBar(percent, progress_bar_width)
-			text = fmt.Sprintf("[%c] %s %s", symbol, song, bar)
-		} else {
-			text = fmt.Sprintf("[%c] %s", symbol, song)
-		}
-		tooltip = fmt.Sprintf("%s (%.2f%%)\n%s", time, percent, album)
-	case "paused":
-		symbol := 0x23F8 // ⏸
-		song, time, album, percent := _cmusExtract(cmus_output)
-		if progress_bar {
-			bar := _progressBar(percent, progress_bar_width)
-			text = fmt.Sprintf("[%c] %s %s", symbol, song, bar)
-		} else {
-			text = fmt.Sprintf("[%c] %s", symbol, song)
-		}
-		tooltip = fmt.Sprintf("%s (%.2f%%)\n%s", time, percent, album)
-	case "stopped":
-		symbol := 0x23F9 // ⏹
-		text = fmt.Sprintf("[%c]", symbol)
-	}
-	// the final output will be an easily parsed json for waybar
-	return cmusWaybar{
-		Status:  status,
-		Text:    text,
-		Tooltip: tooltip,
-	}
-}
-
-func _cmusExtract(cmus_output string) (song string, time string, album string, percent float64) {
+	// extract and populate the metadata
 	meta := _populateMetadata(cmus_output)
-	// extract and format the expected outputs
-	song = fmt.Sprintf("%s - %s", meta.artist, meta.title)
-	time = fmt.Sprintf("%s/%s", _formatSeconds(meta.position), _formatSeconds(meta.duration))
-	album = fmt.Sprintf("[%s] %s", meta.date, meta.album)
-	percent = _progressPercent(meta.position, meta.duration)
-	return song, time, album, percent
+	// format this metadata into useful pieces
+	formatted := _formatMetadata(meta)
+	// populate the final output for waybar
+	waybar := _populateWaybar(meta.status, formatted)
+	return waybar
 }
 
 func _populateMetadata(cmus_output string) cmusMetadata {
-	var pop_artist, pop_title, pop_date, pop_album, pop_duration, pop_position bool // track population
-	meta := cmusMetadata{}
-
+	var pop_status, pop_artist, pop_title, pop_date, pop_album, pop_duration, pop_position bool // track population
+	meta := cmusMetadata{
+		status: "unknown", // set default in case cmus is not running
+	}
+	// this is ordered by expected position in the output
 	for rawLine := range strings.SplitSeq(cmus_output, "\n") {
 		line := strings.TrimSpace(rawLine)
+		if !pop_status {
+			if status, ok := _extractStatus(line, "status "); ok {
+				meta.status = status
+				logger.Debug("found match", "status", status)
+			}
+		}
 		if !pop_duration {
 			if duration, ok := _extractNumber(line, "duration "); ok {
 				meta.duration = duration
@@ -148,6 +119,38 @@ func _populateMetadata(cmus_output string) cmusMetadata {
 	return meta
 }
 
+func _formatMetadata(meta cmusMetadata) cmusFormatted {
+	formatted := cmusFormatted{}
+	// extract and format the expected outputs
+	formatted.song = fmt.Sprintf("%s - %s", meta.artist, meta.title)
+	formatted.time = fmt.Sprintf("%s/%s", _formatSeconds(meta.position), _formatSeconds(meta.duration))
+	formatted.album = fmt.Sprintf("[%s] %s", meta.date, meta.album)
+	formatted.percent = _progressPercent(meta.position, meta.duration)
+	return formatted
+}
+
+func _populateWaybar(status string, formatted cmusFormatted) cmusWaybar {
+	waybar := cmusWaybar{}
+	waybar.Status = status
+	// handle each status, populating the final output for waybar
+	switch status {
+	case "playing":
+		symbol := 0x25B6 // ▶
+		bar := _progressBar(formatted.percent, progress_bar_width)
+		waybar.Text = fmt.Sprintf("[%c] %s%s", symbol, formatted.song, bar)
+		waybar.Tooltip = fmt.Sprintf("%s (%.2f%%)\n%s", formatted.time, formatted.percent, formatted.album)
+	case "paused":
+		symbol := 0x23F8 // ⏸
+		bar := _progressBar(formatted.percent, progress_bar_width)
+		waybar.Text = fmt.Sprintf("[%c] %s%s", symbol, formatted.song, bar)
+		waybar.Tooltip = fmt.Sprintf("%s (%.2f%%)\n%s", formatted.time, formatted.percent, formatted.album)
+	case "stopped":
+		symbol := 0x23F9 // ⏹
+		waybar.Text = fmt.Sprintf("[%c]", symbol)
+	}
+	return waybar
+}
+
 func _extractTag(line string, prefix string) (string, bool) {
 	// catch: no match
 	if !strings.HasPrefix(line, prefix) {
@@ -159,7 +162,23 @@ func _extractTag(line string, prefix string) (string, bool) {
 		return "", false
 	}
 	// extract: all fields after the prefix
-	return strings.Join(fields[2:], " "), true
+	value := strings.Join(fields[2:], " ")
+	return value, true
+}
+
+func _extractStatus(line string, prefix string) (string, bool) {
+	// catch: no match
+	if !strings.HasPrefix(line, prefix) {
+		return "", false
+	}
+	// catch: not enough fields
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return "", false
+	}
+	// extract: specific status field
+	value := fields[1]
+	return value, true
 }
 
 func _extractNumber(line string, prefix string) (int, bool) {
@@ -191,8 +210,13 @@ func _formatSeconds(seconds int) (value string) {
 
 func _progressBar(percent float64, width int) (bar string) {
 	// example: 40% --> ████████░░░░░░░░░░░░
-	filledLength := int(percent / 100 * float64(width))
-	bar = strings.Repeat("█", filledLength) + strings.Repeat("░", width-filledLength)
+	if progress_bar {
+		filledLength := int(percent / 100 * float64(width))
+		// keep the leading space because without the bar flag you don't want a trailing one
+		bar = " " + strings.Repeat("█", filledLength) + strings.Repeat("░", width-filledLength)
+	} else {
+		bar = ""
+	}
 	return bar
 }
 

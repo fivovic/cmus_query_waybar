@@ -1,0 +1,14 @@
+status stopped
+set aaa_mode all
+set continue true
+set play_library true
+set play_sorted false
+set replaygain disabled
+set replaygain_limit true
+set replaygain_preamp 0.000000
+set repeat false
+set repeat_current false
+set shuffle albums
+set softvol false
+set vol_left 0
+set vol_right 0

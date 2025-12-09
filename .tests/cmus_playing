@@ -1,0 +1,23 @@
+status playing
+file /music/wintersun/time_i/02 Sons Of Winter And Stars 2.0.mp3
+duration 829
+position 641
+tag artist Wintersun
+tag album TIME I 2.0
+tag title Sons Of Winter And Stars 2.0
+tag date 2024
+tag tracknumber 2
+tag albumartist Wintersun
+set aaa_mode all
+set continue true
+set play_library true
+set play_sorted true
+set replaygain disabled
+set replaygain_limit true
+set replaygain_preamp 0.000000
+set repeat false
+set repeat_current false
+set shuffle albums
+set softvol false
+set vol_left 77
+set vol_right 77
