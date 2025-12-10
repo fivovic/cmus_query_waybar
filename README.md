@@ -4,7 +4,9 @@ A simple utility to query the status of the cmus music player from the command l
 
 Output is returned in a JSON format, specifically designed to be parsed by waybar.
 
-Waybar configuration example:
+![Example image of Waybar using this cmus integration.](.assets/waybar_with_progress.png)
+
+Example of Waybar configuration:
 
 ```json
 ...
